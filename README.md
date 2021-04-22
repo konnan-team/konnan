@@ -50,7 +50,7 @@ However, it is recommended to include the OpenCL implementation as well, to be a
 
 ### Building models
 
-Once the dependencies are added, you can start building yor models. Konnan defines `Layer`s build your neural-networks, these layers can be stacked on each other, and passed to a `Model` for training and inference. Models accept loss functions, and an optimizer in preparation for training.
+Once the dependencies are added, you can start building your models. Konnan defines `Layer`s build your neural-networks, these layers can be stacked on each other, and passed to a `Model` for training and inference. Models accept loss functions, and an optimizer in preparation for training.
 
 Example:
 
