@@ -50,7 +50,7 @@ However, it is recommended to include the OpenCL implementation as well, to be a
 
 ### Building models
 
-Once the dependencies are added, you can start building your models. Konnan defines `Layer`s build your neural-networks, these layers can be stacked on each other, and passed to a `Model` for training and inference. Models accept loss functions, and an optimizer in preparation for training.
+Once the dependencies are added, you can start building your models. Konnan defines `Layer`s to build your neural-networks, these layers can be stacked on each other, and passed to a `Model` for training and inference. Models accept loss functions, and an optimizer in preparation for training.
 
 Example:
 
@@ -154,5 +154,5 @@ The project is in its infancy at this moment, so expect bugs, and missing featur
 
 If you find any bugs or would like to suggest a new feature, please open an [issue](https://github.com/konnan-team/konnan/issues).
 
-If you'd like to contribute bug-fixes, or new features, please open an issue first, if there aren't any, describing the bug or feature, and mention the issue in your PR. If there is a obvious way to demonstrate the bug-fix or feature in a test, please also implement one in the `kten-testing` module, or if it is related to one of the backend modules, then in that module's tests. 
+If you'd like to contribute bug-fixes, or new features, please open an issue first, if there aren't any, describing the bug or feature, and mention the issue in your PR. 
 
