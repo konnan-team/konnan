@@ -6,6 +6,8 @@ import eu.redbean.konnan.layers.Input
 import eu.redbean.konnan.layers.interfaces.HasCustomUpdate
 import eu.redbean.konnan.layers.modellayer.SingleOutputModelLayer
 import eu.redbean.konnan.optimizers.AbstractOptimizer
+import eu.redbean.konnan.optimizers.utils.GradientNormalizer
+import eu.redbean.kten.api.autograd.tensor.Variable
 import eu.redbean.kten.api.tensor.Tensor
 import eu.redbean.kten.api.tensor.serialization.TensorSerializer
 import eu.redbean.kten.api.tensor.serialization.serializers.BinaryTensorSerializer
@@ -30,20 +32,25 @@ open class Model(
 
     private val checkpointRegex = "checkpoint_([0-9]+)_([0-9]+)\\.params".toRegex()
 
-    val layers
+    override val layers
         get() = outputs.flatMap(this::flattenPreviousLayers).distinct()
 
     var trainCallback: (x: List<Tensor>, y: List<Tensor?>) -> Unit = {x, y -> }
+
+    var gradNormalizer: GradientNormalizer? = null
 
     override fun internalTrainOnBatch(x: List<Tensor>, y: List<Tensor?>): Map<String, Float> {
         if (inputs.size != x.size || outputs.size != y.size)
             throw IllegalArgumentException("Invalid number of values. Model requires ${inputs.size} input and ${outputs.size} output values, " +
                     "but got ${x.size} input and ${y.size} output values.")
 
+        layers.forEach {
+            it.clearOutput()
+            it.training = true
+        }
+
         inputs.zip(x)
             .forEach { (inputLayer, input) -> inputLayer.forward(input) }
-
-        layers.forEach { it.training = true }
 
         val lossValue = loss.calculateLoss(outputs.map { it.value }, y)
         val metricValues = calculateMetrics(y)
@@ -51,6 +58,16 @@ open class Model(
         val currentLoss = lossValue.item()
 
         lossValue.backward()
+
+        val gradNorm = gradNormalizer
+        if (gradNorm != null) {
+            val optimizableParameters = layers.flatMap { it.parameters.entries }
+                .filter { !it.key.startsWith("#") }
+                .map { it.value }
+                .filter { it is Variable }
+                .map { it as Variable }
+            gradNorm.normalize(optimizableParameters)
+        }
 
         optimizer.preUpdate(currentLoss)
         updateParameters(optimizer)
@@ -65,9 +82,16 @@ open class Model(
         if (inputs.size != x.size)
             throw IllegalArgumentException("Invalid number of inputs: ${x.size} for model with input size: ${inputs.size}")
 
-        layers.forEach { it.training = false }
+        layers.forEach {
+            it.training = false
+            it.clearOutput()
+        }
         inputs.zip(x).forEach { (inputLayer, input) -> inputLayer.forward(input) }
-        return outputs.map { it.value.noGrad() }
+        return outputs.map {
+            val res = it.value.noGrad()
+            it.value.release()
+            res
+        }
     }
 
     internal fun updateParameters(optimizer: AbstractOptimizer) {

@@ -6,6 +6,7 @@ import eu.redbean.konnan.layers.MultiInputLayer
 import eu.redbean.konnan.layers.interfaces.HasCustomUpdate
 import eu.redbean.konnan.models.Model
 import eu.redbean.konnan.optimizers.AbstractOptimizer
+import eu.redbean.kten.api.autograd.tensor.Variable
 import eu.redbean.kten.api.tensor.Tensor
 import eu.redbean.kten.api.tensor.serialization.TensorSerializer
 
@@ -63,6 +64,11 @@ class SingleOutputModelLayer(
         layerIndexedSerializedParameters.forEach { layerIndex, serializedParams ->
             model.layers[layerIndex].deserializeParametersWith(serializer, serializedParams)
         }
+    }
+
+    override fun clearOutput() {
+        super.clearOutput()
+        model.layers.forEach { it.clearOutput() }
     }
 
 }

@@ -1,12 +1,17 @@
 package eu.redbean.konnan.layers
 
+import eu.redbean.konnan.layers.initializers.Initializer
+import eu.redbean.konnan.layers.initializers.constant
+import eu.redbean.konnan.layers.initializers.heNormal
 import eu.redbean.kten.api.tensor.Tensor
 import eu.redbean.kten.api.tensor.*
 
 class Dense(
     val size: Int,
     val useBias: Boolean = true,
-    val biasInitializer: (Int) -> Float = { 0f }, //TODO configurable initializers
+    val biasInitializer: Initializer = constant(0f),
+    val weightInitScale: Float = 0.1f,
+    val weightInitializer: Initializer = heNormal(),
     name: String? = null
 ): Layer(name) {
 
@@ -20,9 +25,11 @@ class Dense(
 
     override fun postInvoke() {
         shape = previousLayers[0].shape.dropLast(1) + size
-        weights = (0.1f * platform.createRandom(previousLayers[0].shape + size)).asVariable(requiresGrad = true)
+        weights = (weightInitScale * weightInitializer.init(previousLayers[0].shape + size))
+            .toPlatform(platform.platformKey)
+            .asVariable(requiresGrad = true)
         if (useBias)
-            biases = platform.create(listOf(1, size), true, biasInitializer)
+            biases = biasInitializer.init(listOf(1, size)).toPlatform(platform.platformKey).asVariable(true)
     }
 
     override fun forward(input: Tensor): Tensor {

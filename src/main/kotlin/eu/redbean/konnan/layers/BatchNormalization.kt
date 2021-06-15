@@ -27,16 +27,16 @@ class BatchNormalization(
         val paramShape = listOf(1) + shape.mapIndexed { index, size -> if (index == normAxis) size else 1 }
 
         if (scale)
-            gamma = Tensor.ones(*paramShape.toIntArray()).asVariable(requiresGrad = true)
+            gamma = Tensor.ones(*paramShape.toIntArray()).toPlatform(platform.platformKey).asVariable(requiresGrad = true)
 
         if (center)
-            beta = Tensor.zeros(*paramShape.toIntArray()).asVariable(requiresGrad = true)
+            beta = Tensor.zeros(*paramShape.toIntArray()).toPlatform(platform.platformKey).asVariable(requiresGrad = true)
     }
 
     override fun platformChanged() {
         super.platformChanged()
-        movingMean.toPlatform(platform.platformKey)
-        movingVar.toPlatform(platform.platformKey)
+        movingMean = movingMean.toPlatform(platform.platformKey)
+        movingVar = movingVar.toPlatform(platform.platformKey)
     }
 
     private fun updateMovingMeanAndVar(mean: Tensor, variance: Tensor) {

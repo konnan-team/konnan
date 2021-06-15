@@ -26,7 +26,7 @@ class LinearDecay(
 ): LearningRateScheduler {
 
     override fun getLearningRate(iteration: Int, initialLR: Float, currentLR: Float, currentLoss: Float): Float {
-        val res = initialLR * (1.0f / (1.0f + decay * iteration))
+        val res = initialLR - decay * iteration
         if (res < minimum)
             return minimum
         return res

@@ -1,5 +1,8 @@
 package eu.redbean.konnan.layers
 
+import eu.redbean.konnan.layers.initializers.Initializer
+import eu.redbean.konnan.layers.initializers.heNormal
+import eu.redbean.konnan.layers.initializers.uniform
 import eu.redbean.kten.api.tensor.Tensor
 import kotlin.math.sqrt
 
@@ -14,6 +17,8 @@ abstract class AbstractConvLayer(
     val useBias: Boolean,
     val channelsFirst: Boolean,
     val transposed: Boolean,
+    val weightInitializer: Initializer?,
+    val biasInitializer: Initializer?,
     name: String?
 ): Layer(name) {
 
@@ -38,16 +43,22 @@ abstract class AbstractConvLayer(
         if (size % groups != 0)
             throw IllegalArgumentException("Ouput channels must be divisible with groups, output channels: $size groups: $groups")
 
-        val stdev = 1f / sqrt((inputChannels * kernelSize.fold(1, Int::times)).toFloat())
+        val stdev = 1f / sqrt((inputChannels * kernelSize.fold(1, Int::times)).toDouble())
+
+        val wInit = weightInitializer ?: uniform(-stdev, stdev)
 
         if (transposed) {
-            weight = (platform.createRandom(listOf(inputChannels, size / groups) + kernelSize) * stdev).asVariable(requiresGrad = true)
+            weight = (wInit.init(listOf(inputChannels, size / groups) + kernelSize))
+                .toPlatform(platform.platformKey)
+                .asVariable(requiresGrad = true)
         } else {
-            weight = (platform.createRandom(listOf(size, inputChannels / groups) + kernelSize) * stdev).asVariable(requiresGrad = true)
+            weight = (wInit.init(listOf(size, inputChannels / groups) + kernelSize))
+                .toPlatform(platform.platformKey)
+                .asVariable(requiresGrad = true)
         }
 
         if (useBias)
-            bias = (platform.createRandom(size) * stdev).asVariable(requiresGrad = true)
+            bias = (biasInitializer ?: uniform(-stdev, stdev)).init(listOf(size)).toPlatform(platform.platformKey).asVariable(requiresGrad = true)
 
         calculateShape(inShape)
     }

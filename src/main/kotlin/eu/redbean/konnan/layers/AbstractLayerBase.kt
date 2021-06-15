@@ -80,4 +80,8 @@ abstract class AbstractLayerBase(
         }
     }
 
+    open fun clearOutput() {
+        output = null
+    }
+
 }

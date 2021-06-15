@@ -1,5 +1,6 @@
 package eu.redbean.konnan.layers
 
+import eu.redbean.konnan.layers.initializers.Initializer
 import eu.redbean.kten.api.autograd.functions.nn.conv1dTranspose
 import eu.redbean.kten.api.tensor.Tensor
 
@@ -13,6 +14,8 @@ class Conv1DTranspose(
     groups: Int = 1,
     channelsFirst: Boolean = true,
     useBias: Boolean = true,
+    weightInitializer: Initializer? = null,
+    biasInitializer: Initializer? = null,
     name: String? = null
 ): AbstractConvLayer(
     size,
@@ -25,6 +28,8 @@ class Conv1DTranspose(
     useBias,
     channelsFirst,
     true,
+    weightInitializer,
+    biasInitializer,
     name
 ) {
 

@@ -1,5 +1,6 @@
 package eu.redbean.konnan.layers
 
+import eu.redbean.konnan.layers.initializers.Initializer
 import eu.redbean.konnan.layers.utils.asPair
 import eu.redbean.kten.api.autograd.functions.nn.conv2dTranspose
 import eu.redbean.kten.api.tensor.Tensor
@@ -14,6 +15,8 @@ class Conv2DTranspose(
     groups: Int = 1,
     channelsFirst: Boolean = true,
     useBias: Boolean = true,
+    weightInitializer: Initializer? = null,
+    biasInitializer: Initializer? = null,
     name: String? = null
 ): AbstractConvLayer(
     size,
@@ -26,6 +29,8 @@ class Conv2DTranspose(
     useBias,
     channelsFirst,
     true,
+    weightInitializer,
+    biasInitializer,
     name
 ) {
 
@@ -38,6 +43,8 @@ class Conv2DTranspose(
                 groups: Int = 1,
                 channelsFirst: Boolean = true,
                 useBias: Boolean = true,
+                weightInitializer: Initializer? = null,
+                biasInitializer: Initializer? = null,
                 name: String? = null) : this(
         size,
         kernelSize to kernelSize,
@@ -45,7 +52,7 @@ class Conv2DTranspose(
         padding to padding,
         outputPadding to outputPadding,
         dilation to dilation,
-        groups, channelsFirst, useBias, name
+        groups, channelsFirst, useBias, weightInitializer, biasInitializer, name
     )
 
     override fun checkInputShape(inShape: List<Int>) {

@@ -4,6 +4,7 @@ import eu.redbean.konnan.layers.AbstractLayerBase
 import eu.redbean.konnan.optimizers.schedulers.FixedLR
 import eu.redbean.konnan.optimizers.schedulers.HasSerializableState
 import eu.redbean.konnan.optimizers.schedulers.LearningRateScheduler
+import eu.redbean.konnan.optimizers.utils.GradientNormalizer
 import eu.redbean.kten.api.autograd.tensor.Variable
 import eu.redbean.kten.api.tensor.Tensor
 
@@ -16,6 +17,11 @@ abstract class AbstractOptimizer(
         get private set
 
     protected var iteration: Int = 0
+
+    fun resetLearningRate() {
+        currentLR = learningRate
+        iteration = 0
+    }
 
     open fun preUpdate(currentLoss: Float) {
         currentLR = scheduler.getLearningRate(iteration, learningRate, currentLR, currentLoss)

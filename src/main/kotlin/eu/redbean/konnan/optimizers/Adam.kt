@@ -41,8 +41,7 @@ class Adam(
             parameterValue.inplaceAddToValue(-currentLR * momentumCorrected / (sqrt(cacheCorrected) + epsilon))
             parameterValue.zeroGrad()
 
-            oldMomentum.release()
-            oldCache.release()
+            it.mayRelease(oldMomentum, oldCache)
             it.mustKeep(layer.parameters[momentumName]!!, layer.parameters[cacheName]!!)
         }
     }

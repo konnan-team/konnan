@@ -24,8 +24,15 @@ class RMSProp(
             parameterCacheName,
             Tensor.zerosLikeNoGrad(parameterValue)
         )
-        layer.parameters[parameterCacheName] = rho * layer.parameters[parameterCacheName]!! + (1.0f - rho) * (parameterValue.grad() pow 2)
-        parameterValue.inplaceAddToValue(-currentLR * parameterValue.grad() / (Tensor.sqrt(layer.parameters[parameterCacheName]!!) + epsilon))
-        parameterValue.zeroGrad()
+        layer.platform.garbageCollector().use {
+            val oldCache = layer.parameters[parameterCacheName]!!
+
+            layer.parameters[parameterCacheName] = rho * oldCache + (1.0f - rho) * (parameterValue.grad() pow 2)
+            parameterValue.inplaceAddToValue(-currentLR * parameterValue.grad() / (Tensor.sqrt(layer.parameters[parameterCacheName]!!) + epsilon))
+            parameterValue.zeroGrad()
+
+            it.mayRelease(oldCache)
+            it.mustKeep(layer.parameters[parameterCacheName]!!)
+        }
     }
 }

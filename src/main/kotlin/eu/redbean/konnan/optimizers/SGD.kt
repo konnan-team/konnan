@@ -23,9 +23,16 @@ class SGD(
                 parameterMomentumName,
                 Tensor.zerosLikeNoGrad(parameterValue)
             )
-            val paramUpdates = momentum * layer.parameters[parameterMomentumName]!! - currentLR * parameterValue.grad()
-            layer.parameters[parameterMomentumName] = paramUpdates
-            parameterValue.inplaceAddToValue(paramUpdates)
+            layer.platform.garbageCollector().use {
+                val oldMomentum = layer.parameters[parameterMomentumName]!!
+
+                val paramUpdates = momentum * oldMomentum - currentLR * parameterValue.grad()
+                layer.parameters[parameterMomentumName] = paramUpdates
+                parameterValue.inplaceAddToValue(paramUpdates)
+
+                it.mayRelease(oldMomentum)
+                it.mustKeep(layer.parameters[parameterMomentumName]!!)
+            }
         } else {
             parameterValue.inplaceAddToValue(-currentLR * parameterValue.grad())
         }

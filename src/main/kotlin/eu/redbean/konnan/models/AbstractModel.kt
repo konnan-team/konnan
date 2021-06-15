@@ -5,6 +5,7 @@ import eu.redbean.konnan.layers.AbstractLayerBase
 import eu.redbean.konnan.lossfunctions.LossFunction
 import eu.redbean.konnan.metrics.Metric
 import eu.redbean.konnan.optimizers.AbstractOptimizer
+import eu.redbean.konnan.optimizers.utils.GradientNormalizer
 import eu.redbean.kten.api.tensor.Tensor
 import eu.redbean.kten.api.tensor.platform.PlatformProvider
 import java.nio.file.Path
@@ -30,6 +31,8 @@ abstract class AbstractModel(
 
     protected var prepared = false
         private set
+
+    abstract val layers: List<AbstractLayerBase>
 
 
     fun prepare(optimizer: AbstractOptimizer, vararg loss: LossFunction?) {
@@ -88,7 +91,7 @@ abstract class AbstractModel(
 
     fun summary() {
         var parametersSum = 0
-        outputs.flatMap { it.summary() }.forEach { (layerInfo, parameters) ->
+        outputs.flatMap { it.summary() }.distinct().forEach { (layerInfo, parameters) ->
             println("Layer: $layerInfo - trainable parameters: $parameters")
             parametersSum += parameters
         }
@@ -113,7 +116,7 @@ abstract class AbstractModel(
         return xTransformed to yTransformed
     }
 
-    private fun trainOnBatch(x: List<Tensor>, y: List<Tensor?>): Map<String, Float> {
+    fun trainOnBatch(x: List<Tensor>, y: List<Tensor?>): Map<String, Float> {
         return PlatformProvider.tensorOperations(platform).garbageCollector().use {
             val (xTransformed, yTransformed) = transferXYToModelPaltform(x, y)
             internalTrainOnBatch(xTransformed, yTransformed)
@@ -139,12 +142,22 @@ abstract class AbstractModel(
             }
 
             return PlatformProvider.tensorOperations(this.platform).garbageCollector().use {
-                internalPredictOnBatch(x).map { it.toPlatform(targetPlatform) }
+                internalPredictOnBatch(x).map {
+                    val res = it.toPlatform(targetPlatform)
+                    it.release()
+                    layers.forEach { it.output?.release() }
+                    res
+                }
             }
         }
 
         return PlatformProvider.tensorOperations(this.platform).garbageCollector().use {
-            internalPredictOnBatch(x.map { it.toPlatform(this.platform) }).map { it.toPlatform(targetPlatform) }
+            internalPredictOnBatch(x.map { it.toPlatform(this.platform) }).map {
+                val res = it.toPlatform(targetPlatform)
+                it.release()
+                layers.forEach { it.output?.release() }
+                res
+            }
         }
     }
 

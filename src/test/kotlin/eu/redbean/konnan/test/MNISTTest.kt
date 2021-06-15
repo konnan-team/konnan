@@ -27,10 +27,8 @@ class MNISTTest {
         val input = Input(1, 28, 28)
         var layer = Conv2D(32, kernelSize = 4, stride = 2)(input)
         layer = ReLU()(layer)
-        //layer = BatchNormalization(axis = 0)(layer)
         layer = Conv2D(64, kernelSize = 4, stride = 2, padding = 1)(layer)
         layer = ReLU()(layer)
-        //layer = BatchNormalization(axis = 0)(layer)
         layer = Flatten()(layer)
         layer = Dense(256)(layer)
         layer = ReLU()(layer)
@@ -74,7 +72,7 @@ class MNISTTest {
 
         model.fitGenerator(mnistGen, 5, prefetchOnThreads = 4)
 
-        model.saveParams(Path.of("/tmp/mnist.weights"))
+        //model.saveParams(Path.of("/tmp/mnist.weights"))
 
 
         val evalImgs = UrlDataSource("https://github.com/zalandoresearch/fashion-mnist/raw/master/data/fashion/t10k-images-idx3-ubyte.gz")
