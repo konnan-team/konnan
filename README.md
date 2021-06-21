@@ -135,11 +135,14 @@ Platform specific implementations found:
 [OpenCL - 0 - Intel(R) Core(TM) i7-6820HQ CPU @ 2.70GHz, OpenCL - 1 - Intel(R) HD Graphics 530, OpenCL - 2 - AMD Radeon Pro 455 Compute Engine]
 ```
 
-Here you can see the different OpenCL platforms (if `kten-opencl` is on the classpath), with the device id and the full name of the compute engine, this identifier can be used as a platform key. (The full identifier must be used for now, this will be changed in KTen later on.)
+Here you can see the different OpenCL platforms (if `kten-opencl` is on the classpath), with the device id and the full name of the compute engine, this identifier can be used as a platform key.
+
+To make the selection of the platform easier from code there is a `findPlatform` and a `findAllPlatforms` method in the `PlatformProvider`, 
+which can accept a lambda expression as a selector, where you can filter the available `PlatformInfo`s to find the correct platform key. 
 
 Example:
 ```kotlin
-model.onPlatform("OpenCL - 2 - AMD Radeon Pro 455 Compute Engine")
+model.onPlatform(PlatformProvider.findPlatform { it.deviceType == DeviceType.GPU }.platformKey)
 ```
 
 _`DataFetcher`s will produce tensors on the default platform even if this is set, but the prefetched minibatches will be transferred to the specified platform._

@@ -14,6 +14,8 @@ import eu.redbean.konnan.lossfunctions.mse
 import eu.redbean.konnan.models.Model
 import eu.redbean.konnan.optimizers.Adam
 import eu.redbean.konnan.optimizers.schedulers.DecayOnPlateau
+import eu.redbean.kten.api.tensor.platform.DeviceType
+import eu.redbean.kten.api.tensor.platform.PlatformProvider
 import ij.process.ImageProcessor
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
@@ -63,7 +65,7 @@ class FFHQFeaturesTest {
 
         val model = Model(input, layer)
         model.summary()
-        model.onPlatform("OpenCL - 2 - AMD Radeon Pro 455 Compute Engine")
+        model.onPlatform(PlatformProvider.findPlatform { it.deviceType == DeviceType.GPU }.platformKey)
         model.prepare(Adam(scheduler = DecayOnPlateau(0.5f, 1000, minimum = 1e-5f)), ::mse)
         model.fitGenerator(ffhqGen, 5, prefetchOnThreads = 8, prefetchMaxSize = 20)
     }

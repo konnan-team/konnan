@@ -17,6 +17,7 @@ import eu.redbean.kten.api.tensor.*
 import eu.redbean.kten.api.tensor.Constants.all
 import eu.redbean.kten.api.tensor.Tensor.Companion.abs
 import eu.redbean.kten.api.tensor.Tensor.Companion.sqrt
+import eu.redbean.kten.api.tensor.platform.DeviceType
 import eu.redbean.kten.api.tensor.platform.PlatformProvider
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution
 import org.knowm.xchart.BitmapEncoder
@@ -678,7 +679,7 @@ fun main() {
     val loadWeights = true
     val train = false
     val play = true
-    val platformKey = "OpenCL - 2 - AMD Radeon Pro 455 Compute Engine" // change to your preferred platform
+    val platformKey = PlatformProvider.findPlatform { it.deviceType == DeviceType.GPU }.platformKey // change to your preferred platform
 
     val framesCalculator = FramesCalculator(
         rolloutLength = 128,

@@ -3,8 +3,6 @@ package eu.redbean.konnan.test
 import eu.redbean.konnan.dataprocessing.Generator
 import eu.redbean.konnan.dataprocessing.datasources.UrlDataSource
 import eu.redbean.konnan.layers.*
-import eu.redbean.konnan.layers.activations.GELU
-import eu.redbean.konnan.layers.activations.LeakyReLU
 import eu.redbean.konnan.layers.activations.ReLU
 import eu.redbean.konnan.layers.activations.Softmax
 import eu.redbean.konnan.lossfunctions.CategoricalCrossEntropy
@@ -12,9 +10,8 @@ import eu.redbean.konnan.metrics.CategoricalAccuracy
 import eu.redbean.konnan.models.Model
 import eu.redbean.konnan.optimizers.Adam
 import eu.redbean.kten.api.tensor.Tensor
+import eu.redbean.kten.api.tensor.platform.DeviceType
 import eu.redbean.kten.api.tensor.platform.PlatformProvider
-import eu.redbean.kten.jvm.tensor.operations.AbstractJVMTensorOperations
-import eu.redbean.kten.jvm.tensor.operations.MemLeakDetectingJVMTensorOperations
 import ij.ImagePlus
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
@@ -36,19 +33,21 @@ class MNISTTest {
         layer = Softmax()(layer)
 
         val model = Model(input, layer)
-        //model.onPlatform("OpenCL - 0 - Intel(R) Core(TM) i7-6820HQ CPU @ 2.70GHz")
-        model.onPlatform("OpenCL - 2 - AMD Radeon Pro 455 Compute Engine")
-        //model.onPlatform("OpenCL - 1 - Intel(R) HD Graphics 530")
-        //model.onPlatform("OpenCL - 0 - GeForce RTX 3090")
-        //model.onPlatform("MemLeakDetectJVM")
+        val platform = PlatformProvider.findPlatform { it.deviceType == DeviceType.GPU && it hasMoreMemoryThan "1500MB" }
+        if (platform hasMoreMemoryThan "8GB") {
+            PlatformProvider.memoryUsageScaleHint = 0.1
+        }
+        model.onPlatform(platform.platformKey)
         model.addMetric(CategoricalAccuracy(), "acc")
         model.summary()
         model.prepare(Adam(0.001f), CategoricalCrossEntropy())
 
+        val tempDirPath = Path.of(System.getProperty("java.io.tmpdir"))
+
         val EYE = Tensor.eye(10)
 
         val trainImgs = UrlDataSource("https://github.com/zalandoresearch/fashion-mnist/raw/master/data/fashion/train-images-idx3-ubyte.gz")
-            .cacheDownload(Path.of("/tmp"))
+            .cacheDownload(tempDirPath)
             .gzipBinaryData()
             .skipNBytes(16)
             .fetchBytesAsFloats(28 * 28)
@@ -56,7 +55,7 @@ class MNISTTest {
             .transform { it.reshape(1, 28, 28) }
 
         val trainLabels = UrlDataSource("https://github.com/zalandoresearch/fashion-mnist/raw/master/data/fashion/train-labels-idx1-ubyte.gz")
-            .cacheDownload(Path.of("/tmp"))
+            .cacheDownload(tempDirPath)
             .gzipBinaryData()
             .skipNBytes(8)
             .fetchBytesAsFloats(1)
@@ -64,19 +63,15 @@ class MNISTTest {
 
         val mnistGen = Generator(trainImgs, trainLabels, batchSize = 250).shuffle()
 
-//        model.trainCallback = { x, y ->
-//            (PlatformProvider.tensorOperations("MemLeakDetectJVM") as MemLeakDetectingJVMTensorOperations).referenceStat()
-//        }
-
-        //model.loadParams(Path.of("/tmp/mnist.weights"))
+        //model.loadParams(tempDirPath.resolve("mnist.weights"))
 
         model.fitGenerator(mnistGen, 5, prefetchOnThreads = 4)
 
-        //model.saveParams(Path.of("/tmp/mnist.weights"))
+        //model.saveParams(tempDirPath.resolve("mnist.weights"))
 
 
         val evalImgs = UrlDataSource("https://github.com/zalandoresearch/fashion-mnist/raw/master/data/fashion/t10k-images-idx3-ubyte.gz")
-            .cacheDownload(Path.of("/tmp"))
+            .cacheDownload(tempDirPath)
             .gzipBinaryData()
             .skipNBytes(16)
             .fetchBytesAsFloats(28 * 28)
@@ -84,7 +79,7 @@ class MNISTTest {
             .transform { it.reshape(1, 28, 28) }
 
         val evalLabels = UrlDataSource("https://github.com/zalandoresearch/fashion-mnist/raw/master/data/fashion/t10k-labels-idx1-ubyte.gz")
-            .cacheDownload(Path.of("/tmp"))
+            .cacheDownload(tempDirPath)
             .gzipBinaryData()
             .skipNBytes(8)
             .fetchBytesAsFloats(1)
